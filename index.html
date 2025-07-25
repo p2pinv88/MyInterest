@@ -797,6 +797,61 @@
                 `).join('');
         }
 
+        
+
+        // Actualizar previsión de intereses
+        function updateInterestPreview() {
+            const container = document.getElementById('interestPreview');
+            const currentQuarter = getCurrentQuarter();
+            const nextQuarter = getNextQuarter(currentQuarter);
+            
+            // Si no hay configuración, mostrar mensaje
+            if (!appState.creditLimit || !appState.interestRate) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #6c757d;">
+                        <p style="font-size: 1.2em; margin-bottom: 10px;">
+                            📊 No hay proyecciones disponibles
+                        </p>
+                        <p>Configura tu línea de crédito para ver las proyecciones de intereses</p>
+                        <button onclick="showSection('config')" style="margin-top: 20px;">
+                            Ir a Configuración
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Calcular intereses para el trimestre actual y el siguiente
+            const currentInterest = calculateQuarterInterest();
+            const projectedCurrentInterest = calculateProjectedInterest(currentQuarter);
+            const projectedNextInterest = calculateProjectedInterest(nextQuarter);
+            
+            container.innerHTML = `
+                <p style="margin-bottom: 20px; color: #495057;">
+                    <em>Proyección basada en el saldo actual dispuesto de <strong style="${currentBalance / appState.creditLimit > 0.8 ? 'color: #dc3545;' : ''}">${calculateCurrentBalance().toFixed(2)} €</strong>
+                    ${currentBalance / appState.creditLimit > 0.8 ? '<span style="color: #dc3545; font-weight: bold;"> (⚠️ Más del 80% del límite)</span>' : ''}</em>
+                </p>
+                <div class="quarter-info" style="${daysUntilQuarterEnd() <= 5 ? 'border: 2px solid #dc3545; background: #fee14015;' : ''}">
+                    <h4>Trimestre Actual (Q${currentQuarter.quarter} ${currentQuarter.year}) ${daysUntilQuarterEnd() <= 5 ? '🚨' : ''}</h4>
+                    <div class="info-row">
+                        <span>Intereses acumulados hasta hoy:</span>
+                        <strong>${currentInterest.toFixed(2)} €</strong>
+                    </div>
+                    <div class="info-row">
+                        <span>Proyección fin de trimestre (manteniendo saldo actual):</span>
+                        <strong>${projectedCurrentInterest.toFixed(2)} €</strong>
+                    </div>
+                </div>
+                <div class="quarter-info">
+                    <h4>Próximo Trimestre (Q${nextQuarter.quarter} ${nextQuarter.year})</h4>
+                    <div class="info-row">
+                        <span>Proyección (manteniendo saldo actual):</span>
+                        <strong>${projectedNextInterest.toFixed(2)} €</strong>
+                    </div>
+                </div>
+            `;
+        }
+
 
         // Obtener siguiente trimestre
         function getNextQuarter(currentQuarter) {
