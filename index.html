@@ -729,6 +729,29 @@
             return diffDays;
         }
 
+        // Calcular intereses proyectados para fin de trimestre actual
+        function calculateProjectedInterestForCurrentQuarter() {
+            const currentInterest = calculateQuarterInterest();
+            const today = new Date();
+            const quarterEnd = getQuarterEnd(getCurrentQuarter());
+            const daysRemaining = Math.max(0, Math.ceil((quarterEnd - today) / (1000 * 60 * 60 * 24)));
+            const dailyRate = appState.interestRate / 365 / 100;
+            const currentBalance = calculateCurrentBalance();
+            const projectedInterestsRemaining = currentBalance * dailyRate * daysRemaining;
+            return currentInterest + projectedInterestsRemaining;
+        }
+
+        // Calcular intereses proyectados
+        function calculateProjectedInterest(quarter) {
+            const currentBalance = calculateCurrentBalance();
+            const quarterStart = getQuarterStart(quarter);
+            const quarterEnd = getQuarterEnd(quarter);
+            const days = Math.ceil((quarterEnd - quarterStart) / (1000 * 60 * 60 * 24)) + 1;
+            const dailyRate = appState.interestRate / 365 / 100;
+
+            return currentBalance * dailyRate * days;
+        }
+
         // Actualizar UI
         function updateUI() {
             // Configuración
@@ -768,10 +791,13 @@
                         headerBanner.style.animation = 'pulse 2s ease-in-out infinite';
                     }
 
+                    // Calcular intereses totales estimados para el trimestre
+                    const totalEstimatedInterests = calculateProjectedInterestForCurrentQuarter();
+
                     headerBanner.innerHTML = `
                         ${urgencyIcon} PRÓXIMO PAGO: ${quarterEnd.toLocaleDateString('es-ES', options).toUpperCase()}
                         <br>
-                        <small style="font-size: 0.8em; font-weight: normal;">Faltan ${daysLeft} días - Intereses estimados: ${calculateProjectedInterest(getCurrentQuarter()).toFixed(2)} €</small>
+                        <small style="font-size: 0.8em; font-weight: normal;">Faltan ${daysLeft} días - Intereses estimados: ${totalEstimatedInterests.toFixed(2)} €</small>
                         ${daysLeft <= 5 ? '<br><small style="font-size: 0.7em;">⚠️ Recuerda preparar los fondos necesarios</small>' : ''}
                     `;
                 }
@@ -894,7 +920,7 @@
             
             // Calcular intereses para el trimestre actual y el siguiente
             const currentInterest = calculateQuarterInterest();
-            const projectedCurrentInterest = calculateProjectedInterest(currentQuarter);
+            const projectedCurrentInterest = calculateProjectedInterestForCurrentQuarter();
             const projectedNextInterest = calculateProjectedInterest(nextQuarter);
 
             container.innerHTML = `
@@ -927,17 +953,6 @@
         // Obtener siguiente trimestre
         function getNextQuarter(currentQuarter) {
             return getQuarterInfo(addMonths(currentQuarter.start, 3));
-        }
-
-        // Calcular intereses proyectados
-        function calculateProjectedInterest(quarter) {
-            const currentBalance = calculateCurrentBalance();
-            const quarterStart = getQuarterStart(quarter);
-            const quarterEnd = getQuarterEnd(quarter);
-            const days = Math.ceil((quarterEnd - quarterStart) / (1000 * 60 * 60 * 24)) + 1;
-            const dailyRate = appState.interestRate / 365 / 100;
-
-            return currentBalance * dailyRate * days;
         }
 
         // Exportar datos a un archivo JSON
