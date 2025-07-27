@@ -405,6 +405,14 @@
                 </div>
                 <button onclick="saveConfig()">Guardar Configuración</button>
             </div>
+            <div class="card">
+                <h2 class="section-title">💾 Copia de Seguridad</h2>
+                <button onclick="exportData()">Exportar Datos</button>
+                <div class="form-group" style="margin-top: 10px;">
+                    <input type="file" id="importFile" accept="application/json">
+                </div>
+                <button onclick="importData()">Importar Datos</button>
+            </div>
         </div>
     </div>
 
@@ -898,8 +906,50 @@
             const quarterEnd = getQuarterEnd(quarter);
             const days = Math.ceil((quarterEnd - quarterStart) / (1000 * 60 * 60 * 24)) + 1;
             const dailyRate = appState.interestRate / 365 / 100;
-            
+
             return currentBalance * dailyRate * days;
+        }
+
+        // Exportar datos a un archivo JSON
+        function exportData() {
+            const dataStr = JSON.stringify(appState, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'myinterest_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Importar datos desde un archivo JSON
+        function importData() {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Selecciona un archivo JSON para importar');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if (data && typeof data === 'object' && 'creditLimit' in data &&
+                        'interestRate' in data && 'transactions' in data) {
+                        appState = data;
+                        saveState();
+                        updateUI();
+                        alert('Datos importados correctamente');
+                        showSection('dashboard');
+                    } else {
+                        alert('Archivo no válido');
+                    }
+                } catch (e) {
+                    alert('Error al leer el archivo');
+                }
+            };
+            reader.readAsText(file);
         }
 
         // Inicializar la aplicación
@@ -911,6 +961,8 @@
             window.saveConfig = saveConfig;
             window.addOperation = addOperation;
             window.showSection = showSection;
+            window.exportData = exportData;
+            window.importData = importData;
             
             // Si no hay configuración inicial, mostrar aviso
             if (!appState.creditLimit || !appState.interestRate) {
