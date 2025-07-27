@@ -631,6 +631,7 @@
             const quarterStart = getQuarterStart(currentQuarter);
             const quarterEnd = getQuarterEnd(currentQuarter);
             const today = new Date();
+            today.setHours(23, 59, 59, 999);
             const endDate = today < quarterEnd ? today : quarterEnd;
             
             let totalInterest = 0;
@@ -679,7 +680,15 @@
         // Sumar meses a una fecha
         function addMonths(date, months) {
             const d = new Date(date);
+            const originalDay = d.getDate();
             d.setMonth(d.getMonth() + months);
+            
+            // Si el día cambió (por ejemplo, 31 de enero + 1 mes = 28/29 de febrero),
+            // ajustar al último día del mes anterior
+            if (d.getDate() !== originalDay) {
+                d.setDate(0);
+            }
+            
             return d;
         }
 
@@ -698,8 +707,9 @@
             while (addMonths(start, 3) <= referenceDate) {
                 start = addMonths(start, 3);
             }
-            const end = addMonths(start, 3);
+            const end = new Date(addMonths(start, 3));
             end.setDate(end.getDate() - 1);
+            end.setHours(23, 59, 59, 999);
             const quarter = Math.floor(start.getMonth() / 3) + 1;
             const year = start.getFullYear();
             return { year, quarter, start, end };
@@ -725,8 +735,8 @@
             const today = new Date();
             const quarterEnd = getQuarterEnd(getCurrentQuarter());
             const diffTime = quarterEnd - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            return Math.max(0, diffDays);
         }
 
         // Calcular intereses proyectados para fin de trimestre actual
@@ -734,7 +744,7 @@
             const currentInterest = calculateQuarterInterest();
             const today = new Date();
             const quarterEnd = getQuarterEnd(getCurrentQuarter());
-            const daysRemaining = Math.max(0, Math.ceil((quarterEnd - today) / (1000 * 60 * 60 * 24)));
+            const daysRemaining = Math.max(0, Math.floor((quarterEnd - today) / (1000 * 60 * 60 * 24)) + 1);
             const dailyRate = appState.interestRate / 365 / 100;
             const currentBalance = calculateCurrentBalance();
             const projectedInterestsRemaining = currentBalance * dailyRate * daysRemaining;
@@ -746,7 +756,8 @@
             const currentBalance = calculateCurrentBalance();
             const quarterStart = getQuarterStart(quarter);
             const quarterEnd = getQuarterEnd(quarter);
-            const days = Math.ceil((quarterEnd - quarterStart) / (1000 * 60 * 60 * 24)) + 1;
+            // Calcular días correctamente: desde el inicio hasta el final del trimestre inclusive
+            const days = Math.floor((quarterEnd - quarterStart) / (1000 * 60 * 60 * 24)) + 1;
             const dailyRate = appState.interestRate / 365 / 100;
 
             return currentBalance * dailyRate * days;
@@ -935,15 +946,23 @@
                         <strong>${currentInterest.toFixed(2)} €</strong>
                     </div>
                     <div class="info-row">
-                        <span>Proyección fin de trimestre (manteniendo saldo actual):</span>
-                        <strong>${projectedCurrentInterest.toFixed(2)} €</strong>
+                        <span>Total a pagar fin de trimestre:</span>
+                        <strong style="font-size: 1.1em; color: #dc3545;">${projectedCurrentInterest.toFixed(2)} €</strong>
+                    </div>
+                    <div class="info-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd;">
+                        <span style="font-size: 0.9em; color: #6c757d;">Si mantuvieras el saldo todo el trimestre:</span>
+                        <span style="font-size: 0.9em; color: #6c757d;">${calculateProjectedInterest(currentQuarter).toFixed(2)} €</span>
                     </div>
                 </div>
                 <div class="quarter-info">
                     <h4>Próximo Trimestre (Q${nextQuarter.quarter} ${nextQuarter.year})</h4>
                     <div class="info-row">
-                        <span>Proyección (manteniendo saldo actual):</span>
-                        <strong>${projectedNextInterest.toFixed(2)} €</strong>
+                        <span>Proyección total del trimestre:</span>
+                        <strong style="font-size: 1.1em;">${projectedNextInterest.toFixed(2)} €</strong>
+                    </div>
+                    <div class="info-row" style="margin-top: 5px;">
+                        <span style="font-size: 0.9em; color: #6c757d;">Días del trimestre:</span>
+                        <span style="font-size: 0.9em; color: #6c757d;">${Math.floor((getQuarterEnd(nextQuarter) - getQuarterStart(nextQuarter)) / (1000 * 60 * 60 * 24)) + 1} días</span>
                     </div>
                 </div>
             `;
