@@ -10,6 +10,7 @@ MyInterest is a simple web application for managing a personal credit line and t
 - Dashboard with recent activity and a history table where you can delete entries.
 - Interest forecast for the current and next quarter, including a countdown to the next payment date.
 - Persistent storage using LocalStorage so your data is preserved between sessions.
+- Backup and restore your data through the export/import options.
 
 ## Usage
 
@@ -29,6 +30,7 @@ All calculations run in the browser and your data stays only on your device.
 3. Go to the **Settings** section and set up your credit line parameters.
 4. Record withdrawals or repayments in **Transactions**.
 5. Check the **Home** panel for a summary and interest forecast.
+6. Use **Settings > Copia de Seguridad** to backup or restore your data.
 
 ## Contributing
 
