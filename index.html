@@ -320,7 +320,7 @@
                         <div class="stat-value" id="daysUntilQuarterEnd">-</div>
                         <div class="stat-label">Días hasta fin de trimestre</div>
                     </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); cursor: help;" title="Los intereses se cobran el último día de cada trimestre">
+                    <div class="stat-card" id="nextPaymentCard" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); cursor: help;" title="Los intereses se cobran el último día de cada trimestre">
                         <div class="stat-value" id="nextPaymentDate" style="font-size: 1.3em; color: white;">-</div>
                         <div class="stat-label" style="color: white; font-weight: bold;">📅 Próxima Fecha de Pago</div>
                     </div>
@@ -719,28 +719,38 @@
             // Mostrar próxima fecha de pago
             const quarterEnd = getQuarterEnd(getCurrentQuarter());
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('nextPaymentDate').textContent = quarterEnd.toLocaleDateString('es-ES', options);
-            
-            // Actualizar banner del header
-            const daysLeft = daysUntilQuarterEnd();
+            const nextPaymentCard = document.getElementById('nextPaymentCard');
             const headerBanner = document.getElementById('headerPaymentDate');
-            const urgencyIcon = daysLeft <= 5 ? '🚨' : '⏰';
-            
-            // Cambiar estilo si faltan pocos días
-            if (daysLeft <= 5) {
-                headerBanner.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
-                headerBanner.style.animation = 'pulse 1s ease-in-out infinite';
+
+            if (!appState.creditLimit || !appState.interestRate) {
+                document.getElementById('nextPaymentDate').textContent = '-';
+                if (headerBanner) headerBanner.style.display = 'none';
+                if (nextPaymentCard) nextPaymentCard.style.display = 'none';
             } else {
-                headerBanner.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
-                headerBanner.style.animation = 'pulse 2s ease-in-out infinite';
+                document.getElementById('nextPaymentDate').textContent = quarterEnd.toLocaleDateString('es-ES', options);
+                const daysLeft = daysUntilQuarterEnd();
+                const urgencyIcon = daysLeft <= 5 ? '🚨' : '⏰';
+
+                if (headerBanner) {
+                    headerBanner.style.display = 'inline-block';
+                    if (daysLeft <= 5) {
+                        headerBanner.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+                        headerBanner.style.animation = 'pulse 1s ease-in-out infinite';
+                    } else {
+                        headerBanner.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                        headerBanner.style.animation = 'pulse 2s ease-in-out infinite';
+                    }
+
+                    headerBanner.innerHTML = `
+                        ${urgencyIcon} PRÓXIMO PAGO: ${quarterEnd.toLocaleDateString('es-ES', options).toUpperCase()}
+                        <br>
+                        <small style="font-size: 0.8em; font-weight: normal;">Faltan ${daysLeft} días - Intereses estimados: ${calculateProjectedInterest(getCurrentQuarter()).toFixed(2)} €</small>
+                        ${daysLeft <= 5 ? '<br><small style="font-size: 0.7em;">⚠️ Recuerda preparar los fondos necesarios</small>' : ''}
+                    `;
+                }
+
+                if (nextPaymentCard) nextPaymentCard.style.display = 'block';
             }
-            
-            headerBanner.innerHTML = `
-                ${urgencyIcon} PRÓXIMO PAGO: ${quarterEnd.toLocaleDateString('es-ES', options).toUpperCase()}
-                <br>
-                <small style="font-size: 0.8em; font-weight: normal;">Faltan ${daysLeft} días - Intereses estimados: ${calculateProjectedInterest(getCurrentQuarter()).toFixed(2)} €</small>
-                ${daysLeft <= 5 ? '<br><small style="font-size: 0.7em;">⚠️ Recuerda preparar los fondos necesarios</small>' : ''}
-            `;
             
             // Fecha por defecto en el formulario
             document.getElementById('operationDate').value = new Date().toISOString().split('T')[0];
