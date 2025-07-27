@@ -505,6 +505,16 @@
                 return;
             }
 
+            // Validar que no existan transacciones previas a la nueva fecha de inicio
+            if (startDate) {
+                const newStart = new Date(startDate);
+                const hasOldTx = appState.transactions.some(t => new Date(t.date) < newStart);
+                if (hasOldTx) {
+                    alert('Existen operaciones anteriores a la nueva fecha de inicio. Elimínalas o selecciona una fecha anterior.');
+                    return;
+                }
+            }
+
             appState.creditLimit = creditLimit;
             appState.interestRate = interestRate;
             appState.startDate = startDate;
@@ -531,6 +541,15 @@
             if (!amount || !date) {
                 alert('Por favor, completa todos los campos');
                 return;
+            }
+
+            // Validar que la operación sea posterior o igual a la fecha de inicio
+            if (appState.startDate) {
+                const start = new Date(appState.startDate);
+                if (new Date(date) < start) {
+                    alert('La fecha de la operación debe ser posterior o igual a la fecha de inicio establecida.');
+                    return;
+                }
             }
 
             // Validar que no se exceda el límite
@@ -855,6 +874,7 @@
             const container = document.getElementById('interestPreview');
             const currentQuarter = getCurrentQuarter();
             const nextQuarter = getNextQuarter(currentQuarter);
+            const currentBalance = calculateCurrentBalance();
             
             // Si no hay configuración, mostrar mensaje
             if (!appState.creditLimit || !appState.interestRate) {
@@ -876,10 +896,10 @@
             const currentInterest = calculateQuarterInterest();
             const projectedCurrentInterest = calculateProjectedInterest(currentQuarter);
             const projectedNextInterest = calculateProjectedInterest(nextQuarter);
-            
+
             container.innerHTML = `
                 <p style="margin-bottom: 20px; color: #495057;">
-                    <em>Proyección basada en el saldo actual dispuesto de <strong style="${currentBalance / appState.creditLimit > 0.8 ? 'color: #dc3545;' : ''}">${calculateCurrentBalance().toFixed(2)} €</strong>
+                    <em>Proyección basada en el saldo actual dispuesto de <strong style="${currentBalance / appState.creditLimit > 0.8 ? 'color: #dc3545;' : ''}">${currentBalance.toFixed(2)} €</strong>
                     ${currentBalance / appState.creditLimit > 0.8 ? '<span style="color: #dc3545; font-weight: bold;"> (⚠️ Más del 80% del límite)</span>' : ''}</em>
                 </p>
                 <div class="quarter-info" style="${daysUntilQuarterEnd() <= 5 ? 'border: 2px solid #dc3545; background: #fee14015;' : ''}">
